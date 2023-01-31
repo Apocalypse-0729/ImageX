@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ImageX</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <link rel="icon" type="image/x-icon" href="/icon.jpg">
+</head>
+
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+    crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="style.css">
+  <!-- <title>Image Gallery</title> -->
+  <div class="bg-dark text-light">
+    <div class=" text-secondary px-4 py-5 text-center">
+      <div class="py-5">
+        <h1 class="display-5 fw-bold text-white">ImageX</h1>
+        <div class="col-lg-6 mx-auto">
+          <p class="fs-5 mb-4"> ImageX is a free service, empowering people to upload, share and enjoy images online.
+
+            Hosting millions of files requires massive resources and it simply became too big for our previous hosting
+            platform to handle.</p>
+          <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+            <button type="button" class="btn btn-outline-info btn-lg px-4 me-sm-3 fw-bold">Start Uploading</button>
+            <button type="button" class="btn btn-outline-light btn-lg px-4">Docs</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="text-center pb-5 mb-5">
+      <label>File Name :</label> <input type="text" id="namebox" />
+      <label id="extlab"></label> <br /><br />
+      <img id="myimg" class="border border-dark rounded-2" /> <label id="upprogress"></label> <br /><br />
+      <button id="selbtn" type="button" class="btn btn-outline-info">Select Image</button>
+      <button id="upbtn" type="button" class="btn btn-outline-info">Upload Image</button>
+      <button id="downbtn" type="button" class="btn btn-outline-info">Display Image</button>
+    </div>
+  <div class="container">
+    <footer>
+      <ul class="nav justify-content-center border-bottom pb-3 mb-3">
+        <li class="nav-item"><a href="#" class="nav-link px-2 text-light">Help</a></li>
+        <li class="nav-item"><a href="#" class="nav-link px-2 text-light">Terms</a></li>
+        <li class="nav-item"><a href="#" class="nav-link px-2 text-light">Privacy</a></li>
+        <li class="nav-item"><a href="#" class="nav-link px-2 text-light">Report Abuse</a></li>
+      </ul>
+      <p class="text-center text-light">© 2023 | All Rights Reserved</p>
+      <p class="text-center text-light pb-5">Made with &#10084; by ImageX</p>
+    </footer>
+  </div>
+  </div>
+</div>
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyCW8dgx2YWBQH_XJ8UbOryhFSQp0uIq2w0",
+      authDomain: "image-storage-e3e5e.firebaseapp.com",
+      databaseURL: "https://image-storage-e3e5e-default-rtdb.firebaseio.com",
+      projectId: "image-storage-e3e5e",
+      storageBucket: "image-storage-e3e5e.appspot.com",
+      messagingSenderId: "935214945637",
+      appId: "1:935214945637:web:fb8b4430e2f329cd90fd8c",
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+
+    import {
+      getStorage,
+      ref as sRef,
+      uploadBytesResumable,
+      getDownloadURL,
+    } from "https://www.gstatic.com/firebasejs/9.1.3/firebase-storage.js";
+
+
+    //Firebase Realtime Database
+    import { getDatabase, ref, set, child, get, update, remove }
+      from "https://www.gstatic.com/firebasejs/9.1.3/firebase-database.js";
+    const realdb = getDatabase();
+    // -VARIABLES & REFERENCES;
+    var files = [];
+    var reader = new FileReader();
+    var namebox = document.getElementById("namebox");
+    var extlab = document.getElementById("extlab");
+    var myimg = document.getElementById("myimg");
+    var proglab = document.getElementById("upprogress");
+    var SelBtn = document.getElementById("selbtn");
+    var UpBtn = document.getElementById("upbtn");
+    var DownBtn = document.getElementById("downbtn");
+    var input = document.createElement("input");
+    input.type = "file";
+    input.onchange = e => {
+      files = e.target.files;
+      var extention = GetFileExt(files[0]);
+      var name = GetFileName(files[0]);
+      namebox.value = name;
+      extlab.innerHTML = extention;
+      reader.readAsDataURL(files[0]);
+    };
+    reader.onload = function () {
+      myimg.src = reader.result;
+    };
+
+    SelBtn.onclick = function () {
+      input.click();
+    };
+    function GetFileExt(file) {
+      var temp = file.name.split(".");
+      var ext = temp.slice(temp.length - 1, temp.length);
+      return "." + ext[0];
+    }
+    function GetFileName(file) {
+      var temp = file.name.split(".");
+      var fname = temp.slice(0, -1).join(".");
+      return fname;
+    }
+
+    // UPLOAD
+    async function UploadProcess() {
+      var ImgToUpload = files[0];
+
+      var ImgName = namebox.value + extlab.innerHTML;
+
+      const metaData = {
+        contentType: ImgToUpload.type
+      }
+      const storage = getStorage();
+
+      const storageRef = sRef(storage, 'Images/' + ImgName);
+
+      const UploadTask = uploadBytesResumable(storageRef, ImgToUpload, metaData);
+
+      UploadTask.on('state-changed', (snapshot) => {
+        var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        proglab.innerHTML = "Upload" + progress + "%";
+      },
+
+        (error) => {
+          alert("Error: image not uploaded!");
+        },
+        () => {
+          getDownloadURL(UploadTask.snapshot.ref).then((downloadURL) => {
+            console.log(downloadURL);
+            SaveURLtoRealtimDB(downloadURL)
+            alert("Image Uploaded Successfully!");
+          });
+        }
+      );
+    }
+
+    function SaveURLtoRealtimDB(URL) {
+      var name = namebox.value;
+      var ext = extlab.innerHTML;
+      set(ref(realdb, "ImagesLinks/" + name), {
+        ImageName: (name + ext),
+        ImgUrl: URL
+      });
+    }
+    function GetUrlfromRealtimDB() {
+      var name = namebox.value;
+      var dbRef = ref(realdb);
+      get(child(dbRef, "ImagesLinks/" + name)).then((snapshot) => {
+        if (snapshot.exists()) {
+          myimg.src = snapshot.val().ImgUrl;
+          alert("Image Successfully Displayed!")
+        }
+      })
+    }
+    UpBtn.onclick = UploadProcess;
+    DownBtn.onclick = GetUrlfromRealtimDB;  
+  </script>
+</body>
+
+</html>
